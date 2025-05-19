@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnVoiceClone - 面向生成式伪造语音欺骗的鲁棒主动防御系统</title>
+    <link rel="stylesheet" href="style.css"> <!-- 引用外部CSS文件 -->
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧侧边栏 -->
+        <aside class="sidebar">
+            <h1>UnVoiceClone</h1>
+            <nav>
+                <ul>
+                    <li><a href="#intro">项目简介</a></li>
+                    <li><a href="#features">主要特性</a></li>
+                    <li><a href="#architecture">系统架构</a></li>
+                    <li><a href="#algorithms">核心算法</a></li>
+                    <li><a href="#tech-stack">核心技术栈</a></li>
+                    <li><a href="#modules">项目模块与功能</a></li>
+                    <li><a href="#contribute">如何贡献</a></li>
+                    <li><a href="#contact">联系方式</a></li>
+                    <!-- 添加 GitHub 仓库链接 -->
+                    <li style="margin-top: 20px; border-top: 1px solid #4a505a; padding-top: 15px;">
+                        <a href="https://github.com/PeriodBLUE/VoiceSafety" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- 右侧主内容 -->
+        <main class="content-area">
+            <!-- 项目简介 -->
+            <section id="intro" class="section">
+                <h2>项目简介</h2>
+                <p>随着语音伪造技术的飞速发展，金融欺诈、舆论引导等安全事件层出不穷。UnVoiceClone 致力于在音视频中预先添加鲁棒对抗扰动，破坏语音伪造模型的有效性，从源头遏制语音伪造行为，降低声纹信息被恶意利用的风险。</p>
+                <p><strong>项目主页（GitHub Pages）：</strong> <a href="https://setsu1na.github.io/VoiceSafety/" target="_blank">https://setsu1na.github.io/VoiceSafety/</a><br>
+                <strong>GitHub 仓库：</strong> <a href="https://github.com/PeriodBLUE/VoiceSafety" target="_blank">https://github.com/PeriodBLUE/VoiceSafety</a></p>
+            </section>
+
+            <!-- 主要特性 -->
+            <section id="features" class="section">
+                <h2>主要特性</h2>
+                <ul>
+                    <li><strong>强抗克隆能力</strong>：基于异性身份替换与 KL 散度声纹特征选择，显著提升防御后语音与原始语音的差异性，平均 PSD 值较现有方法提升 2.32–1.76。</li>
+                    <li><strong>高保真度</strong>：引入高斯分布逼近损失与软约束损失，保证防御语音在语义与听感上的一致性，ASV 相似度提升至 84.73%。</li>
+                    <li><strong>鲁棒性强</strong>：采用高斯噪声优化的 WaveGlow 对抗生成，确保防御效果在加噪、裁剪、AAC/MP3 压缩等操作后仍能保持 60.04% 防御成功率。</li>
+                    <li><strong>泛化性高</strong>：动态加权集成多说话人编码器并融合梯度正则化 & SAM 技术，对未知黑盒模型（如 LVC-VC、VALL-E、XTTS2、ElevenLabs）平均防御成功率达 66.29%。</li>
+                    <li><strong>高效性</strong>：借助 inaSpeechSegmenter 精准定位说话人片段并行多线程处理，系统处理时间平均缩短 20%。</li>
+                </ul>
+                <figure>
+                    <img src="images/1.png" alt="UnVoiceClone特性展示">
+                    <figcaption>图1 UnVoiceClone系统特性</figcaption>
+                </figure>
+            </section>
+
+            <!-- 系统架构 -->
+            <section id="architecture" class="section">
+                <h2>系统架构</h2>
+                <p>本系统采用 B/S 架构，分为三大模块：</p>
+                <ol>
+                    <li><strong>用户操作端（Front-end）</strong>
+                        <ul>
+                            <li>基于 Flask 提供 Web 界面，支持音视频文件上传、原始/防御后文件在线播放。</li>
+                        </ul>
+                    </li>
+                    <li><strong>后台处理端（Back-end）</strong>
+                        <ul>
+                            <li>集成核心防御算法：声纹隐私主动防御、WaveGlow 对抗生成、动态集成说话人编码器、梯度正则化优化等。</li>
+                        </ul>
+                    </li>
+                    <li><strong>结果输出端（Output）</strong>
+                        <ul>
+                            <li>生成并导出防御后音视频，支持本地下载与二次转换测试。</li>
+                        </ul>
+                    </li>
+                </ol>
+                <figure>
+                    <img src="images/2.png" alt="系统架构示意">
+                    <figcaption>图2 系统架构示意图</figcaption>
+                </figure>
+            </section>
+
+            <!-- 核心算法 -->
+            <section id="algorithms" class="section">
+                <h2>核心算法</h2>
+                <ul>
+                    <li><strong>基于匿名异性身份替换的声纹隐私主动防御</strong>：选择与原始声音 KL 散度最大之异性声纹，结合基音可控调节，强化防御后声纹区分度。</li>
+                    <li><strong>高斯扰动优化的 WaveGlow 对抗语音生成</strong>：确保对抗扰动遵循高斯分布，提高压缩与噪声场景下的鲁棒性。</li>
+                    <li><strong>动态权重调整的集成说话人编码器策略</strong>：对多模型损失进行历史统计归一化，动态分配攻击强度，提升对未知模型的泛化表现。</li>
+                    <li><strong>基于梯度正则化与锐度感知最小化 (SAM) 的扰动优化</strong>：平衡模型整体平滑性与对抗扰动强度，增强防御稳定性。</li>
+                </ul>
+                <figure>
+                    <img src="images/3.png" alt="核心算法流程图">
+                    <figcaption>图3 核心算法流程图</figcaption>
+                </figure>
+            </section>
+
+            <!-- 核心技术栈 -->
+            <section id="tech-stack" class="section">
+                <h2>核心技术栈</h2>
+                <ul>
+                    <li><strong>前端</strong>：HTML5, CSS3, JavaScript, Flask + Jinja2 模板</li>
+                    <li><strong>后端</strong>：Python, Flask Web 框架</li>
+                    <li><strong>机器学习／语音处理</strong>：PyTorch (WaveGlow), inaSpeechSegmenter, 多线程并行技术</li>
+                    <li><strong>多媒体处理</strong>：FFmpeg (音视频提取与重组)</li>
+                </ul>
+                <figure>
+                    <img src="images/4.png" alt="技术栈展示图">
+                    <figcaption>图4 核心技术栈展示</figcaption>
+                </figure>
+            </section>
+
+            <!-- 项目模块与功能 -->
+            <section id="modules" class="section">
+                <h2>项目模块与功能</h2>
+                <ol>
+                    <li><strong>系统主页 (<code>index.html</code>)</strong>：展示项目简介、功能导航与操作指南。</li>
+                    <li><strong>音频防御模块 (<code>audio_defense.py</code>)</strong>：上传原始音频、启动 UnVC 防御、播放/下载防御后音频。</li>
+                    <li><strong>视频防御模块 (<code>video_defense.py</code>)</strong>：提取视频音频并防御，重新合成并导出防御后视频。</li>
+                    <li><strong>防御测试模块 (<code>test_module.py</code>)</strong>：包括"音频转换测试"与"音频合成测试"，便于用户验证防御效果。</li>
+                </ol>
+                <figure>
+                    <img src="images/5.png" alt="项目模块功能演示">
+                    <figcaption>图5 项目功能模块演示</figcaption>
+                </figure>
+
+                <h3>系统界面与功能</h3>
+                <p>系统提供了直观的用户界面，以便用户上传、处理和测试音视频文件。以下是主要界面的功能展示：</p>
+                <figure>
+                    <img src="images/6.png" alt="系统主界面">
+                    <figcaption>图6 系统主界面</figcaption>
+                </figure>
+                <figure>
+                    <img src="images/7.png" alt="音频防御处理界面">
+                    <figcaption>图7 音频防御处理界面</figcaption>
+                </figure>
+                <figure>
+                    <img src="images/8.png" alt="音频防御效果测试">
+                    <figcaption>图8 音频防御效果测试</figcaption>
+                </figure>
+            </section>
+
+            <!-- 如何贡献 -->
+            <section id="contribute" class="section">
+                <h2>如何贡献</h2>
+                <p>欢迎参与 UnVoiceClone 的建设与优化：</p>
+                <ul>
+                    <li>提交 <strong>Issue</strong> 报告 Bug 或功能建议</li>
+                    <li>提交 <strong>Pull Request</strong> 改进代码或文档</li>
+                    <li>分享使用经验并反馈性能改进点</li>
+                </ul>
+                <figure>
+                    <img src="images/9.png" alt="项目贡献流程">
+                    <figcaption>图9 项目贡献流程</figcaption>
+                </figure>
+            </section>
+
+            <!-- 联系方式 -->
+            <section id="contact" class="section">
+                <h2>联系方式</h2>
+                <ul>
+                    <li><strong>Email</strong>: unvoiceclone-team@gmail.com</li>
+                    <li><strong>GitHub Issues</strong>: <a href="https://github.com/PeriodBLUE/VoiceSafety/issues" target="_blank">https://github.com/PeriodBLUE/VoiceSafety/issues</a></li>
+                </ul>
+                <figure>
+                    <img src="images/10.png" alt="联系方式与社区交流">
+                    <figcaption>图10 联系方式与社区交流</figcaption>
+                </figure>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- 页脚 -->
+    <footer>
+        <p>&copy; 2023 UnVoiceClone项目团队 | 面向生成式伪造语音欺骗的鲁棒主动防御系统</p>
+    </footer>
+
+    <!-- 返回顶部按钮 -->
+    <a href="#" id="backToTopBtn" title="返回顶部">&#9650;</a>
+
+    <script>
+        // 平滑滚动到锚点 和 处理外部链接
+        document.querySelectorAll('.sidebar nav a').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                
+                // 检查链接是否是页内锚点链接
+                if (href && href.startsWith('#')) {
+                    e.preventDefault(); // 只对页内链接阻止默认行为
+                    const targetId = href.substring(1);
+                    const targetElement = document.getElementById(targetId);
+
+                    if (targetElement) {
+                        // 使用 window.scrollTo 实现平滑滚动并考虑侧边栏的 sticky 定位
+                        const offsetTop = targetElement.offsetTop - 20; 
+                        window.scrollTo({
+                            top: offsetTop,
+                            behavior: 'smooth'
+                        });
+                        
+                        // 点击时立即更新 active 类，提供即时反馈
+                        updateActiveLink(targetId);
+                    }
+                } 
+                // 对于非 '#' 开头的链接 (例如外部链接), 不调用 e.preventDefault(), 
+                // 允许浏览器执行默认的跳转行为 (在新标签页打开, 因为有 target="_blank")
+            });
+        });
+
+        // 更新侧边栏链接的 active 状态 (只处理页内链接)
+        function updateActiveLink(activeId) {
+            document.querySelectorAll('.sidebar nav a').forEach(link => {
+                const linkHref = link.getAttribute('href');
+                if (linkHref && linkHref.startsWith('#')) { // 确保只操作页内链接
+                    link.classList.remove('active');
+                    if (linkHref === `#${activeId}`) {
+                        link.classList.add('active');
+                    }
+                }
+            });
+        }
+
+        // 监听滚动事件，高亮当前可见区域对应的导航链接
+        const sections = document.querySelectorAll('.section');
+        const sidebarLinks = document.querySelectorAll('.sidebar nav a');
+        
+        // 创建 Intersection Observer 实例
+        const observerOptions = {
+            root: null, // 使用视口作为根
+            rootMargin: '-60px 0px -40% 0px', // 顶部偏移60px，底部至少40%还在视口或更下方才算离开
+            threshold: 0.01 // 只要有一点点进入指定区域就触发
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // 当某个 section 进入视口时，更新对应的导航链接状态
+                    const targetId = entry.target.getAttribute('id');
+                    updateActiveLink(targetId);
+                }
+            });
+        }, observerOptions);
+
+        // 为每个 section 添加观察
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+
+        // --- 返回顶部按钮逻辑 ---
+        const backToTopButton = document.getElementById("backToTopBtn");
+        const scrollThreshold = 300; // 向下滚动多少像素后显示按钮
+
+        // 监听滚动事件
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > scrollThreshold || document.documentElement.scrollTop > scrollThreshold) {
+                backToTopButton.style.display = "block"; // 或者添加一个 .show 类
+            } else {
+                backToTopButton.style.display = "none"; // 或者移除 .show 类
+            }
+        });
+
+        // 监听按钮点击事件
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault(); // 阻止链接的默认行为
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        // --- 返回顶部按钮逻辑结束 ---
+
+    </script>
+</body>
+</html>
